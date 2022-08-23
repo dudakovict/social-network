@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-zipkin-pod
+  namespace: users-zipkin-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+      # zipkin container configuration
+      - name: zipkin
+        resources:
+          limits:
+            cpu: "200m" # Up to 1/5 full core
+          requests:
+            cpu: "100m" # Use 1/10 full core

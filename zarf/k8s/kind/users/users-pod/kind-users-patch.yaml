@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-pod
+  namespace: users-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: users
+  template:
+    metadata:
+      labels:
+        app: users
+    spec:
+      containers:
+      # users-api container configuration
+      - name: users-api
+        resources:
+          limits:
+            cpu: "500m" # Up to 2 full cores
+          requests:
+            cpu: "250m" # Use 1 full cores

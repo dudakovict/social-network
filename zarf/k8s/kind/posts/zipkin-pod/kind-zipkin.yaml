@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: posts-zipkin-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-zipkin-pod # Base POD name
+  namespace: posts-zipkin-system
+spec:
+  selector:
+    matchLabels:
+      app: zipkin # Selector for POD name search.
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      terminationGracePeriodSeconds: 60
+      containers:
+      # zipkin container configuration
+      - name: zipkin
+        image: openzipkin
+        ports:
+        - name: zipkin
+          containerPort: 9412
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: posts-zipkin-service
+  namespace: posts-zipkin-system
+spec:
+  type: ClusterIP
+  selector:
+    app: zipkin
+  ports:
+  - name: zipkin
+    port: 9412
+    targetPort: zipkin

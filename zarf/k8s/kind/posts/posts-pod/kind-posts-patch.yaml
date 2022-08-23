@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posts-pod
+  namespace: posts-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: posts
+  template:
+    metadata:
+      labels:
+        app: posts
+    spec:
+      containers:
+      # users-api container configuration
+      - name: posts-api
+        resources:
+          limits:
+            cpu: "500m" # Up to 1/2 full cores
+          requests:
+            cpu: "250m" # Use 1/4 full cores

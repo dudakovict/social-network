@@ -1,0 +1,32 @@
+# Build the Go Binary.
+FROM golang:1.17 as build_users-api
+ENV CGO_ENABLED 0
+ARG BUILD_REF
+
+# Copy the source code into the container.
+COPY . /service
+
+# Build the admin binary.
+WORKDIR /service/app/tooling/users-admin
+RUN go build -ldflags "-X main.build=${BUILD_REF}"
+
+# Build the service binary.
+WORKDIR /service/app/services/users-api
+RUN go build -ldflags "-X main.build=${BUILD_REF}"
+
+# Run the Go Binary in Alpine.
+FROM alpine:3.15
+ARG BUILD_DATE
+ARG BUILD_REF
+COPY --from=build_users-api /service/zarf/keys/. /service/zarf/keys/.
+COPY --from=build_users-api /service/app/tooling/users-admin/users-admin /service/admin
+COPY --from=build_users-api /service/app/services/users-api/users-api /service/users-api
+WORKDIR /service
+CMD ["./users-api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="users-api" \
+      org.opencontainers.image.authors="Timon Dudaković <dudakovict@gmail.com>" \
+      org.opencontainers.image.source="https://github.com/dudakovict/social-network/" \
+      org.opencontainers.image.revision="${BUILD_REF}" \
+      org.opencontainers.image.vendor="Timon Dudaković"
