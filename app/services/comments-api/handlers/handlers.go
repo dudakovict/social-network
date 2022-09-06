@@ -7,10 +7,10 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/dudakovict/social-network/app/services/posts-api/handlers/debug/checkgrp"
-	v1PostGrp "github.com/dudakovict/social-network/app/services/posts-api/handlers/v1/postgrp"
-	v1TestGrp "github.com/dudakovict/social-network/app/services/posts-api/handlers/v1/testgrp"
-	postCore "github.com/dudakovict/social-network/business/core/post"
+	v1CommentGrp "github.com/dudakovict/social-network/app/services/comment-api/handlers/v1/commentgrp"
+	v1TestGrp "github.com/dudakovict/social-network/app/services/comment-api/handlers/v1/testgrp"
+	"github.com/dudakovict/social-network/app/services/comments-api/handlers/debug/checkgrp"
+	commentCore "github.com/dudakovict/social-network/business/core/comment"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/web/v1/mid"
 	"github.com/dudakovict/social-network/foundation/web"
@@ -92,13 +92,13 @@ func v1(app *web.App, cfg APIMuxConfig) {
 	app.Handle(http.MethodGet, version, "/testauth", tgh.Test, mid.Authenticate(cfg.Auth), mid.Authorize("ADMIN"))
 
 	// Register post management and authentication endpoints.
-	pgh := v1PostGrp.Handlers{
-		Core: postCore.NewCore(cfg.Log, cfg.DB),
+	cgh := v1CommentGrp.Handlers{
+		Core: commentCore.NewCore(cfg.Log, cfg.DB),
 		Auth: cfg.Auth,
 	}
-	app.Handle(http.MethodGet, version, "/posts/:page/:rows", pgh.Query, mid.Authenticate(cfg.Auth))
-	app.Handle(http.MethodGet, version, "/posts/:id", pgh.QueryByID, mid.Authenticate(cfg.Auth))
-	app.Handle(http.MethodPost, version, "/posts", pgh.Create, mid.Authenticate(cfg.Auth))
-	app.Handle(http.MethodPut, version, "/posts/:id", pgh.Update, mid.Authenticate(cfg.Auth))
-	app.Handle(http.MethodDelete, version, "/posts/:id", pgh.Delete, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodGet, version, "/comments/:page/:rows", cgh.Query, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodGet, version, "/comments/:id", cgh.QueryByID, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodPost, version, "/comments", cgh.Create, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodPut, version, "/comments/:id", cgh.Update, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodDelete, version, "/comments/:id", cgh.Delete, mid.Authenticate(cfg.Auth))
 }

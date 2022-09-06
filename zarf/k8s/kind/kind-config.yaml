@@ -7,15 +7,23 @@ nodes:
     hostPort: 9411
   - containerPort: 9412
     hostPort: 9412
+  - containerPort: 9413
+    hostPort: 9413
   - containerPort: 3000
     hostPort: 3000
   - containerPort: 3001
     hostPort: 3001
+  - containerPort: 3002
+    hostPort: 3002
   - containerPort: 4000
     hostPort: 4000
   - containerPort: 4001
     hostPort: 4001
+  - containerPort: 4002
+    hostPort: 4002
   - containerPort: 5432
     hostPort: 5432
   - containerPort: 5433
     hostPort: 5433
+  - containerPort: 5434
+    hostPort: 5434

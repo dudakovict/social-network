@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: posts-pod
-  namespace: posts-system
+  name: comments-pod
+  namespace: comments-system
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: posts
+      app: comments
   template:
     metadata:
       labels:
-        app: posts
+        app: comments
     spec:
       containers:
-      # posts-api container configuration
-      - name: posts-api
+      # comments-api container configuration
+      - name: comments-api
         resources:
           limits:
             cpu: "500m" # Up to 1/2 full cores

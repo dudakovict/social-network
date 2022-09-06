@@ -49,9 +49,9 @@ func (s Store) Tran(tx sqlx.ExtContext) Store {
 func (s Store) Create(ctx context.Context, p Post) error {
 	const q = `
 	INSERT INTO posts
-		(post_id, title, description, date_created, date_updated)
+		(post_id, title, description, user_id, date_created, date_updated)
 	VALUES
-		(:post_id, :title, :description, :date_created, :date_updated)`
+		(:post_id, :title, :description, :user_id, :date_created, :date_updated)`
 
 	if err := database.NamedExecContext(ctx, s.log, s.db, q, p); err != nil {
 		return fmt.Errorf("inserting post: %w", err)
@@ -149,4 +149,27 @@ func (s Store) QueryByID(ctx context.Context, postID string) (Post, error) {
 	}
 
 	return p, nil
+}
+
+func (s Store) QueryByUserID(ctx context.Context, userID string) ([]Post, error) {
+	data := struct {
+		UserID string `db:"user_id"`
+	}{
+		UserID: userID,
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		posts
+	WHERE
+		user_id = :user_id`
+
+	var ps []Post
+	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &ps); err != nil {
+		return nil, fmt.Errorf("selecting posts userID[%s]: %w", userID, err)
+	}
+
+	return ps, nil
 }

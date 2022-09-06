@@ -45,6 +45,7 @@ func (c Core) Create(ctx context.Context, np NewPost, now time.Time) (Post, erro
 		ID:          validate.GenerateID(),
 		Title:       np.Title,
 		Description: np.Description,
+		UserID:      np.UserID,
 		DateCreated: now,
 		DateUpdated: now,
 	}
@@ -142,4 +143,18 @@ func (c Core) QueryByID(ctx context.Context, postID string) (Post, error) {
 	}
 
 	return toPost(dbP), nil
+}
+
+func (c Core) QueryByUserID(ctx context.Context, userID string) ([]Post, error) {
+	if err := validate.CheckID(userID); err != nil {
+		return nil, ErrInvalidID
+	}
+
+	dbPosts, err := c.store.QueryByUserID(ctx, userID)
+
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+
+	return toPostSlice(dbPosts), nil
 }

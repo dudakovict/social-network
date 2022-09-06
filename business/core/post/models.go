@@ -12,6 +12,7 @@ type Post struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
+	UserID      string    `json:"user_id"`
 	DateCreated time.Time `json:"date_created"`
 	DateUpdated time.Time `json:"date_updated"`
 }
@@ -20,6 +21,7 @@ type Post struct {
 type NewPost struct {
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description" validate:"required"`
+	UserID      string `json:"user_id" validate:"required"`
 }
 
 // UpdatePost defines what information may be provided to modify an existing

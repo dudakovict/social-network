@@ -45,9 +45,16 @@ func TestPost(t *testing.T) {
 			np := post.NewPost{
 				Title:       "New Song",
 				Description: "Check out my new song!",
+				UserID:      "45b5fbd3-755f-4379-8f07-a58d4a30fa2f",
 			}
 
 			p, err := core.Create(ctx, np, now)
+			if err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould be able to create post : %s.", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould be able to create post.", dbtest.Success, testID)
+
+			_, err = core.Create(ctx, np, now)
 			if err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to create post : %s.", dbtest.Failed, testID, err)
 			}
@@ -106,6 +113,12 @@ func TestPost(t *testing.T) {
 				t.Fatalf("\t%s\tTest %d:\tShould NOT be able to retrieve post : %s.", dbtest.Failed, testID, err)
 			}
 			t.Logf("\t%s\tTest %d:\tShould NOT be able to retrieve post.", dbtest.Success, testID)
+
+			_, err = core.QueryByUserID(ctx, p.UserID)
+			if err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve posts by UserID : %s.", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould be able to retrieve posts by UserID.", dbtest.Success, testID)
 		}
 	}
 }
