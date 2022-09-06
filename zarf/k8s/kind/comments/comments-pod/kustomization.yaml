@@ -5,9 +5,9 @@ resources:
 patchesStrategicMerge:
 - ./kind-comments-patch.yaml
 images:
-- name: openzipkin
-  newName: openzipkin/zipkin
-  newTag: "2.23"
 - name: comments-api-image
   newName: comments-api-amd64
   newTag: "1.0"
+- name: openzipkin
+  newName: openzipkin/zipkin
+  newTag: "2.23"

@@ -31,7 +31,7 @@ spec:
         ports:
         - name: comments-api
           containerPort: 3002
-        - name: comments-api-debug
+        - name: comments-api-dg
           containerPort: 4002
         readinessProbe: # readiness probes mark the service available to accept traffic.
           httpGet:
@@ -82,6 +82,6 @@ spec:
   - name: comments-api
     port: 3002
     targetPort: comments-api
-  - name: comments-api-debug
+  - name: comments-api-dg
     port: 4002
-    targetPort: comments-api-debug
+    targetPort: comments-api-dg

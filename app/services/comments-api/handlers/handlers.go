@@ -7,9 +7,9 @@ import (
 	"net/http/pprof"
 	"os"
 
-	v1CommentGrp "github.com/dudakovict/social-network/app/services/comment-api/handlers/v1/commentgrp"
-	v1TestGrp "github.com/dudakovict/social-network/app/services/comment-api/handlers/v1/testgrp"
 	"github.com/dudakovict/social-network/app/services/comments-api/handlers/debug/checkgrp"
+	v1CommentGrp "github.com/dudakovict/social-network/app/services/comments-api/handlers/v1/commentgrp"
+	v1TestGrp "github.com/dudakovict/social-network/app/services/comments-api/handlers/v1/testgrp"
 	commentCore "github.com/dudakovict/social-network/business/core/comment"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/web/v1/mid"

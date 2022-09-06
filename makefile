@@ -57,7 +57,7 @@ admin:
 
 VERSION := 1.0
 
-all: users-api posts-api
+all: users-api posts-api comments-api
 
 users-api:
 	docker build \
@@ -71,6 +71,14 @@ posts-api:
 	docker build \
 		-f zarf/docker/dockerfile.posts-api \
 		-t posts-api-amd64:$(VERSION) \
+		--build-arg BUILD_REF=$(VERSION) \
+		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+		.
+
+comments-api:
+	docker build \
+		-f zarf/docker/dockerfile.comments-api \
+		-t comments-api-amd64:$(VERSION) \
 		--build-arg BUILD_REF=$(VERSION) \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		.
@@ -97,6 +105,9 @@ kind-load:
 	cd zarf/k8s/kind/posts/posts-pod; kustomize edit set image posts-api-image=posts-api-amd64:$(VERSION)
 	kind load docker-image posts-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
+	cd zarf/k8s/kind/comments/comments-pod; kustomize edit set image comments-api-image=comments-api-amd64:$(VERSION)
+	kind load docker-image comments-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
+
 kind-apply:
 	kustomize build zarf/k8s/kind/users/database-pod | kubectl apply -f -
 	kubectl wait --namespace=users-database-system --timeout=240s --for=condition=Available deployment/users-database-pod
@@ -110,6 +121,12 @@ kind-apply:
 	kubectl wait --namespace=posts-zipkin-system --timeout=240s --for=condition=Available deployment/posts-zipkin-pod
 	kustomize build zarf/k8s/kind/posts/posts-pod | kubectl apply -f -
 
+	kustomize build zarf/k8s/kind/comments/database-pod | kubectl apply -f -
+	kubectl wait --namespace=comments-database-system --timeout=240s --for=condition=Available deployment/comments-database-pod
+	kustomize build zarf/k8s/kind/comments/zipkin-pod | kubectl apply -f -
+	kubectl wait --namespace=comments-zipkin-system --timeout=240s --for=condition=Available deployment/comments-zipkin-pod
+	kustomize build zarf/k8s/kind/comments/comments-pod | kubectl apply -f -
+
 kind-services-delete:
 	kustomize build zarf/k8s/kind/users/users-pod | kubectl delete -f -
 	kustomize build zarf/k8s/kind/users/zipkin-pod | kubectl delete -f -
@@ -117,7 +134,8 @@ kind-services-delete:
 
 kind-restart:
 	kubectl rollout restart deployment users-pod
-	kubectl rollout restart deployment posts-pod
+	kubectl rollout restart deployment posts-pod --namespace=posts-system
+	kubectl rollout restart deployment comments-pod --namespace=comments-system
 
 kind-update: all kind-load kind-restart
 
