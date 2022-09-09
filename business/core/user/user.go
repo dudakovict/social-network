@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dudakovict/social-network/business/core/user/db"
+	"github.com/dudakovict/social-network/business/data/email"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/sys/database"
 	"github.com/dudakovict/social-network/business/sys/validate"
@@ -29,12 +30,16 @@ var (
 // Core manages the set of API's for user access.
 type Core struct {
 	store db.Store
+	ec    email.EmailClient
+	log   *zap.SugaredLogger
 }
 
 // NewCore constructs a core for user api access.
-func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB) Core {
+func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB, client email.EmailClient) Core {
 	return Core{
 		store: db.NewStore(log, sqlxDB),
+		ec:    client,
+		log:   log,
 	}
 }
 
@@ -74,6 +79,28 @@ func (c Core) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 	// if err := c.store.Create(ctx, dbUsr); err != nil {
 	// 	return User{}, fmt.Errorf("create: %w", err)
 	// }
+
+	in := email.EmailRequest{
+		Email: dbUsr.Email,
+	}
+
+	_, err = c.ec.Send(ctx, &in)
+	if err != nil {
+		c.log.Info("==============", err, "==================")
+		c.log.Info("==============", err, "==================")
+		c.log.Info("==============", err, "==================")
+		c.log.Info("==============", err, "==================")
+	}
+
+	/*
+		go func() error {
+			_, err = c.ec.Send(ctx, &in)
+			if err != nil {
+				return fmt.Errorf("send: %w", err)
+			}
+			return nil
+		}()
+	*/
 
 	return toUser(dbUsr), nil
 }

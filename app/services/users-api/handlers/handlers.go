@@ -11,6 +11,7 @@ import (
 	v1TestGrp "github.com/dudakovict/social-network/app/services/users-api/handlers/v1/testgrp"
 	v1UserGrp "github.com/dudakovict/social-network/app/services/users-api/handlers/v1/usergrp"
 	userCore "github.com/dudakovict/social-network/business/core/user"
+	"github.com/dudakovict/social-network/business/data/email"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/web/v1/mid"
 	"github.com/dudakovict/social-network/foundation/web"
@@ -61,6 +62,7 @@ type APIMuxConfig struct {
 	Log      *zap.SugaredLogger
 	Auth     *auth.Auth
 	DB       *sqlx.DB
+	EC       email.EmailClient
 }
 
 // APIMux constructs an http.Handler with all application routes defined.
@@ -93,7 +95,7 @@ func v1(app *web.App, cfg APIMuxConfig) {
 
 	// Register user management and authentication endpoints.
 	ugh := v1UserGrp.Handlers{
-		Core: userCore.NewCore(cfg.Log, cfg.DB),
+		Core: userCore.NewCore(cfg.Log, cfg.DB, cfg.EC),
 		Auth: cfg.Auth,
 	}
 	app.Handle(http.MethodGet, version, "/users/token", ugh.Token)

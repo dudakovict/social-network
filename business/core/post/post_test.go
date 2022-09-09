@@ -32,7 +32,7 @@ func TestPost(t *testing.T) {
 	log, db, teardown := dbtest.NewUnit(t, c, "testpost")
 	t.Cleanup(teardown)
 
-	core := post.NewCore(log, db)
+	core := post.NewCore(log, db, nil)
 
 	t.Log("Given the need to work with Post records.")
 	{
@@ -132,7 +132,7 @@ func TestPagingPost(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	post := post.NewCore(log, db)
+	post := post.NewCore(log, db, nil)
 
 	t.Log("Given the need to page through Post records.")
 	{

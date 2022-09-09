@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: posts-pod
-  namespace: posts-system
+  namespace: services-system
 spec:
   replicas: 1
   strategy:
@@ -23,3 +23,12 @@ spec:
             cpu: "500m" # Up to 1/2 full cores
           requests:
             cpu: "250m" # Use 1/4 full cores
+        env:
+          - name: NATS_CLIENT_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NATS_URL
+            value: 'http://nats-service:4222'
+          - name: NATS_CLUSTER_ID
+            value: social-network

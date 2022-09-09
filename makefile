@@ -57,7 +57,7 @@ admin:
 
 VERSION := 1.0
 
-all: users-api posts-api comments-api
+all: users-api posts-api comments-api email-api
 
 users-api:
 	docker build \
@@ -83,6 +83,19 @@ comments-api:
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		.
 
+email-api:
+	docker build \
+		-f zarf/docker/dockerfile.email-api \
+		-t email-api-amd64:$(VERSION) \
+		--build-arg BUILD_REF=$(VERSION) \
+		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+		.
+
+email-proto:
+	protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		business/data/email/email.proto
+		
 # ==============================================================================
 # Running from within k8s/kind
 
@@ -93,7 +106,7 @@ kind-up:
 		--image kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad \
 		--name $(KIND_CLUSTER) \
 		--config zarf/k8s/kind/kind-config.yaml
-	kubectl config set-context --current --namespace=users-system
+	kubectl config set-context --current --namespace=services-system
 
 kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
@@ -108,23 +121,31 @@ kind-load:
 	cd zarf/k8s/kind/comments/comments-pod; kustomize edit set image comments-api-image=comments-api-amd64:$(VERSION)
 	kind load docker-image comments-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
+	cd zarf/k8s/kind/email; kustomize edit set image email-api-image=email-api-amd64:$(VERSION)
+	kind load docker-image email-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
+
 kind-apply:
+	kustomize build zarf/k8s/kind/nats | kubectl apply -f -
+	kubectl wait --namespace=services-system --timeout=240s --for=condition=Available deployment/nats-pod
+
+	kustomize build zarf/k8s/kind/email | kubectl apply -f -
+	
 	kustomize build zarf/k8s/kind/users/database-pod | kubectl apply -f -
-	kubectl wait --namespace=users-database-system --timeout=240s --for=condition=Available deployment/users-database-pod
+	kubectl wait --namespace=database-system --timeout=240s --for=condition=Available deployment/users-database-pod
 	kustomize build zarf/k8s/kind/users/zipkin-pod | kubectl apply -f -
-	kubectl wait --namespace=users-zipkin-system --timeout=240s --for=condition=Available deployment/users-zipkin-pod
+	kubectl wait --namespace=zipkin-system --timeout=240s --for=condition=Available deployment/users-zipkin-pod
 	kustomize build zarf/k8s/kind/users/users-pod | kubectl apply -f -
 
 	kustomize build zarf/k8s/kind/posts/database-pod | kubectl apply -f -
-	kubectl wait --namespace=posts-database-system --timeout=240s --for=condition=Available deployment/posts-database-pod
+	kubectl wait --namespace=database-system --timeout=240s --for=condition=Available deployment/posts-database-pod
 	kustomize build zarf/k8s/kind/posts/zipkin-pod | kubectl apply -f -
-	kubectl wait --namespace=posts-zipkin-system --timeout=240s --for=condition=Available deployment/posts-zipkin-pod
+	kubectl wait --namespace=zipkin-system --timeout=240s --for=condition=Available deployment/posts-zipkin-pod
 	kustomize build zarf/k8s/kind/posts/posts-pod | kubectl apply -f -
 
 	kustomize build zarf/k8s/kind/comments/database-pod | kubectl apply -f -
-	kubectl wait --namespace=comments-database-system --timeout=240s --for=condition=Available deployment/comments-database-pod
+	kubectl wait --namespace=database-system --timeout=240s --for=condition=Available deployment/comments-database-pod
 	kustomize build zarf/k8s/kind/comments/zipkin-pod | kubectl apply -f -
-	kubectl wait --namespace=comments-zipkin-system --timeout=240s --for=condition=Available deployment/comments-zipkin-pod
+	kubectl wait --namespace=zipkin-system --timeout=240s --for=condition=Available deployment/comments-zipkin-pod
 	kustomize build zarf/k8s/kind/comments/comments-pod | kubectl apply -f -
 
 kind-services-delete:
@@ -132,10 +153,16 @@ kind-services-delete:
 	kustomize build zarf/k8s/kind/users/zipkin-pod | kubectl delete -f -
 	kustomize build zarf/k8s/kind/users/database-pod | kubectl delete -f -
 
+kind-zipkin-delete:
+	kustomize build zarf/k8s/kind/users/zipkin-pod | kubectl delete -f -
+	kustomize build zarf/k8s/kind/posts/zipkin-pod | kubectl delete -f -
+	kustomize build zarf/k8s/kind/comments/zipkin-pod | kubectl delete -f -
+
 kind-restart:
 	kubectl rollout restart deployment users-pod
-	kubectl rollout restart deployment posts-pod --namespace=posts-system
-	kubectl rollout restart deployment comments-pod --namespace=comments-system
+	kubectl rollout restart deployment posts-pod 
+	kubectl rollout restart deployment comments-pod
+	kubectl rollout restart deployment email-pod
 
 kind-update: all kind-load kind-restart
 
@@ -158,11 +185,11 @@ kind-status:
 	kubectl get svc -o wide
 	kubectl get pods -o wide --watch --all-namespaces
 
-kind-status-users:
+kind-status-services:
 	kubectl get pods -o wide --watch
 
-kind-status-db:
-	kubectl get pods -o wide --watch --namespace=users-database-system
+kind-status-databases:
+	kubectl get pods -o wide --watch --namespace=database-system
 
 kind-status-zipkin:
 	kubectl get pods -o wide --watch --namespace=zipkin-system

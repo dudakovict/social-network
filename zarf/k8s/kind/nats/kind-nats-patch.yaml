@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nats-pod
+  namespace: services-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nats
+  template:
+    metadata:
+      labels:
+        app: nats
+    spec:
+      containers:
+      # nats container configuration
+      - name: nats
+        resources:
+          limits:
+            cpu: "200m" # Up to 1/5 full core
+          requests:
+            cpu: "100m" # Use 1/10 full core

@@ -27,3 +27,9 @@ nodes:
     hostPort: 5433
   - containerPort: 5434
     hostPort: 5434
+  - containerPort: 4222
+    hostPort: 4222
+  - containerPort: 8222
+    hostPort: 8222
+  - containerPort: 50084
+    hostPort: 50084

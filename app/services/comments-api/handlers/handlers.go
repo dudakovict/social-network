@@ -12,6 +12,7 @@ import (
 	v1TestGrp "github.com/dudakovict/social-network/app/services/comments-api/handlers/v1/testgrp"
 	commentCore "github.com/dudakovict/social-network/business/core/comment"
 	"github.com/dudakovict/social-network/business/sys/auth"
+	"github.com/dudakovict/social-network/business/sys/nats"
 	"github.com/dudakovict/social-network/business/web/v1/mid"
 	"github.com/dudakovict/social-network/foundation/web"
 	"github.com/jmoiron/sqlx"
@@ -61,6 +62,7 @@ type APIMuxConfig struct {
 	Log      *zap.SugaredLogger
 	Auth     *auth.Auth
 	DB       *sqlx.DB
+	NATS     *nats.NATS
 }
 
 // APIMux constructs an http.Handler with all application routes defined.
@@ -93,12 +95,14 @@ func v1(app *web.App, cfg APIMuxConfig) {
 
 	// Register post management and authentication endpoints.
 	cgh := v1CommentGrp.Handlers{
-		Core: commentCore.NewCore(cfg.Log, cfg.DB),
+		Core: commentCore.NewCore(cfg.Log, cfg.DB, cfg.NATS),
 		Auth: cfg.Auth,
 	}
+
 	app.Handle(http.MethodGet, version, "/comments/:page/:rows", cgh.Query, mid.Authenticate(cfg.Auth))
 	app.Handle(http.MethodGet, version, "/comments/:id", cgh.QueryByID, mid.Authenticate(cfg.Auth))
 	app.Handle(http.MethodPost, version, "/comments", cgh.Create, mid.Authenticate(cfg.Auth))
 	app.Handle(http.MethodPut, version, "/comments/:id", cgh.Update, mid.Authenticate(cfg.Auth))
 	app.Handle(http.MethodDelete, version, "/comments/:id", cgh.Delete, mid.Authenticate(cfg.Auth))
+	app.Handle(http.MethodGet, version, "/posts/:id", cgh.QueryPostsByPostID, mid.Authenticate(cfg.Auth))
 }

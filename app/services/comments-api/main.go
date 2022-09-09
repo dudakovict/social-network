@@ -15,6 +15,7 @@ import (
 	"github.com/dudakovict/social-network/app/services/comments-api/handlers"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/sys/database"
+	"github.com/dudakovict/social-network/business/sys/nats"
 	"github.com/dudakovict/social-network/foundation/keystore"
 	"github.com/dudakovict/social-network/foundation/logger"
 	"go.opentelemetry.io/otel"
@@ -95,6 +96,11 @@ func run(log *zap.SugaredLogger) error {
 			ServiceName string  `conf:"default:comments-api"`
 			Probability float64 `conf:"default:0.05"`
 		}
+		NATS struct {
+			ClusterID string `conf:"default:social-network"`
+			ClientID  string `conf:"env:NATS_CLIENT_ID"`
+			Host      string `conf:"default:http://nats-service:4222,env:NATS_URL"`
+		}
 	}{
 		Version: conf.Version{
 			SVN:  build,
@@ -167,6 +173,28 @@ func run(log *zap.SugaredLogger) error {
 	}()
 
 	// =========================================================================
+	// NATS Support
+
+	// Create connectivity to the NATS server.
+	log.Infow("startup", "status", "initializing NATS support", "host", cfg.NATS.Host)
+
+	cfg.NATS.ClientID = os.Getenv("NATS_CLIENT_ID")
+
+	n, err := nats.Connect(nats.Config{
+		ClusterID: cfg.NATS.ClusterID,
+		ClientID:  "COMMENTS_CLIENT",
+		Host:      cfg.NATS.Host,
+	})
+
+	if err != nil {
+		return fmt.Errorf("connecting to NATS server: %w", err)
+	}
+	defer func() {
+		log.Infow("shutdown", "status", "stopping NATS support", "host", cfg.NATS.Host)
+		n.Client.Close()
+	}()
+
+	// =========================================================================
 	// Start Tracing Support
 
 	log.Infow("startup", "status", "initializing OT/Zipkin tracing support")
@@ -216,6 +244,7 @@ func run(log *zap.SugaredLogger) error {
 		Log:      log,
 		Auth:     auth,
 		DB:       db,
+		NATS:     n,
 	})
 
 	// Construct a server to service the requests against the mux.

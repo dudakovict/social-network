@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: users-system
+  name: services-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: users-pod # Base POD name
-  namespace: users-system
+  namespace: services-system
 spec:
   selector:
     matchLabels:
@@ -73,7 +73,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: users-service
-  namespace: users-system
+  namespace: services-system
 spec:
   type: ClusterIP
   selector:

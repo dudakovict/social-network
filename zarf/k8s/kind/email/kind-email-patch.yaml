@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-pod
+  namespace: services-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: email
+  template:
+    metadata:
+      labels:
+        app: email
+    spec:
+      containers:
+      # users-api container configuration
+      - name: email-api
+        resources:
+          limits:
+            cpu: "250m" # Up to 2 full cores
+          requests:
+            cpu: "125m" # Use 1 full cores

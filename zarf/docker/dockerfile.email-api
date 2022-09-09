@@ -1,0 +1,26 @@
+# Build the Go Binary.
+FROM golang:1.17 as build_email-api
+ENV CGO_ENABLED 0
+ARG BUILD_REF
+
+# Copy the source code into the container.
+COPY . /service
+
+# Build the service binary.
+WORKDIR /service/app/services/email-api
+RUN go build -ldflags "-X main.build=${BUILD_REF}"
+
+# Run the Go Binary in Alpine.
+FROM alpine:3.15
+ARG BUILD_DATE
+ARG BUILD_REF
+COPY --from=build_email-api /service/app/services/email-api/email-api /service/email-api
+WORKDIR /service
+CMD ["./email-api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="email-api" \
+      org.opencontainers.image.authors="Timon Dudaković <dudakovict@gmail.com>" \
+      org.opencontainers.image.source="https://github.com/dudakovict/social-network/" \
+      org.opencontainers.image.revision="${BUILD_REF}" \
+      org.opencontainers.image.vendor="Timon Dudaković"

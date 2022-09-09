@@ -169,3 +169,35 @@ func (h Handlers) QueryByID(ctx context.Context, w http.ResponseWriter, r *http.
 
 	return web.Respond(ctx, w, c, http.StatusOK)
 }
+
+func (h Handlers) QueryPostsByPostID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	/*
+		claims, err := auth.GetClaims(ctx)
+		if err != nil {
+			return v1Web.NewRequestError(auth.ErrForbidden, http.StatusForbidden)
+		}
+	*/
+
+	postID := web.Param(r, "id")
+
+	/*
+		// If you are not an admin and looking to retrieve someone other than yourself.
+		if !claims.Authorized(auth.RoleAdmin) && claims.Subject != postID {
+			return v1Web.NewRequestError(auth.ErrForbidden, http.StatusForbidden)
+		}
+	*/
+
+	ps, err := h.Core.QueryPostsByPostID(ctx, postID)
+	if err != nil {
+		switch {
+		case errors.Is(err, comment.ErrInvalidID):
+			return v1Web.NewRequestError(err, http.StatusBadRequest)
+		case errors.Is(err, comment.ErrNotFound):
+			return v1Web.NewRequestError(err, http.StatusNotFound)
+		default:
+			return fmt.Errorf("ID[%s]: %w", postID, err)
+		}
+	}
+
+	return web.Respond(ctx, w, ps, http.StatusOK)
+}

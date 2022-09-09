@@ -4,13 +4,16 @@
 package post
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/dudakovict/social-network/business/core/post/db"
 	"github.com/dudakovict/social-network/business/sys/database"
+	"github.com/dudakovict/social-network/business/sys/nats"
 	"github.com/dudakovict/social-network/business/sys/validate"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -26,12 +29,14 @@ var (
 // Core manages the set of API's for post access.
 type Core struct {
 	store db.Store
+	n     *nats.NATS
 }
 
 // NewCore constructs a core for post api access.
-func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB) Core {
+func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB, n *nats.NATS) Core {
 	return Core{
 		store: db.NewStore(log, sqlxDB),
+		n:     n,
 	}
 }
 
@@ -66,6 +71,25 @@ func (c Core) Create(ctx context.Context, np NewPost, now time.Time) (Post, erro
 	// 	return Post{}, fmt.Errorf("create: %w", err)
 	// }
 
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+
+	if err := enc.Encode(&dbP); err != nil {
+		return Post{}, fmt.Errorf("encoding: %w", err)
+	}
+
+	if err := c.n.Client.Publish("post-created", buf.Bytes()); err != nil {
+		return Post{}, fmt.Errorf("pub: %w", err)
+	}
+
+	/*
+		nuid, err := c.nats.PublishAsync("test", []byte("Hello World"), nil)
+
+		if err != nil {
+			fmt.Printf("Error publishing msg %s: %v\n", nuid, err.Error())
+		}
+	*/
+
 	return toPost(dbP), nil
 }
 
@@ -97,6 +121,17 @@ func (c Core) Update(ctx context.Context, postID string, up UpdatePost, now time
 
 	if err := c.store.Update(ctx, dbP); err != nil {
 		return fmt.Errorf("udpate: %w", err)
+	}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+
+	if err := enc.Encode(&dbP); err != nil {
+		return fmt.Errorf("encoding: %w", err)
+	}
+
+	if err := c.n.Client.Publish("post-updated", buf.Bytes()); err != nil {
+		return fmt.Errorf("pub: %w", err)
 	}
 
 	return nil

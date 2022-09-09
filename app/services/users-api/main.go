@@ -14,6 +14,7 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/dudakovict/social-network/app/services/users-api/handlers"
+	"github.com/dudakovict/social-network/business/data/email"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/sys/database"
 	"github.com/dudakovict/social-network/foundation/keystore"
@@ -26,6 +27,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	_ "go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 var build = "develop"
@@ -96,6 +98,9 @@ func run(log *zap.SugaredLogger) error {
 			ReporterURI string  `conf:"default:http://localhost:9411/api/v2/spans"`
 			ServiceName string  `conf:"default:users-api"`
 			Probability float64 `conf:"default:0.05"`
+		}
+		GRPC struct {
+			Address string `conf:"default:email-service:50084"`
 		}
 	}{
 		Version: conf.Version{
@@ -184,6 +189,20 @@ func run(log *zap.SugaredLogger) error {
 	defer traceProvider.Shutdown(context.Background())
 
 	// =========================================================================
+	// Start GRPC Support
+
+	log.Infow("startup", "status", "initializing gRPC support", "host", cfg.GRPC.Address)
+
+	conn, err := grpc.Dial(cfg.GRPC.Address, grpc.WithInsecure())
+	if err != nil {
+		return fmt.Errorf("connecting to gRPC: %w", err)
+	}
+
+	defer conn.Close()
+
+	client := email.NewEmailClient(conn)
+
+	// =========================================================================
 	// Start Debug Service
 
 	log.Infow("startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
@@ -218,6 +237,7 @@ func run(log *zap.SugaredLogger) error {
 		Log:      log,
 		Auth:     auth,
 		DB:       db,
+		EC:       client,
 	})
 
 	// Construct a server to service the requests against the mux.

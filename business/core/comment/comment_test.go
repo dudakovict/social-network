@@ -32,7 +32,7 @@ func TestComment(t *testing.T) {
 	log, db, teardown := dbtest.NewUnit(t, c, "testcomment")
 	t.Cleanup(teardown)
 
-	core := comment.NewCore(log, db)
+	core := comment.NewCore(log, db, nil)
 
 	t.Log("Given the need to work with Comment records.")
 	{
@@ -129,7 +129,7 @@ func TestPagingComment(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	comment := comment.NewCore(log, db)
+	comment := comment.NewCore(log, db, nil)
 
 	t.Log("Given the need to page through Comment records.")
 	{

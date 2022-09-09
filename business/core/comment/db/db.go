@@ -195,3 +195,82 @@ func (s Store) QueryByPostID(ctx context.Context, postID string) ([]Comment, err
 
 	return comms, nil
 }
+
+func (s Store) CreatePost(ctx context.Context, p Post) error {
+	const q = `
+	INSERT INTO posts
+		(post_id, title, description, user_id, date_created, date_updated)
+	VALUES
+		(:post_id, :title, :description, :user_id, :date_created, :date_updated)`
+
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, p); err != nil {
+		return fmt.Errorf("inserting post: %w", err)
+	}
+
+	return nil
+}
+
+func (s Store) UpdatePost(ctx context.Context, p Post) error {
+	const q = `
+	UPDATE
+		posts
+	SET 
+		"title" = :title,
+		"description" = :description,
+		"date_updated" = :date_updated
+	WHERE
+		post_id = :post_id`
+
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, p); err != nil {
+		return fmt.Errorf("updating postID[%s]: %w", p.ID, err)
+	}
+
+	return nil
+}
+
+func (s Store) DeletePost(ctx context.Context, postID string) error {
+	data := struct {
+		PostID string `db:"post_id"`
+	}{
+		PostID: postID,
+	}
+
+	const q = `
+	DELETE FROM
+		posts
+	WHERE
+		post_id = :post_id`
+
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
+		return fmt.Errorf("deleting commentID[%s]: %w", postID, err)
+	}
+
+	return nil
+}
+
+func (s Store) QueryPostsByPostID(ctx context.Context, postID string) ([]PostComment, error) {
+	data := struct {
+		PostID string `db:"post_id"`
+	}{
+		PostID: postID,
+	}
+
+	const q = `
+	SELECT
+		p.*, c.comment_id, c.description as comment_description, c.user_id as comment_user_id, c.date_created as comment_date_created, c.date_updated as comment_date_updated
+	FROM
+		posts as p
+	LEFT JOIN
+		comments as c
+	ON
+		p.post_id = c.post_id
+	WHERE
+		p.post_id = :post_id`
+
+	var pscomms []PostComment
+	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &pscomms); err != nil {
+		return nil, fmt.Errorf("selecting comments postID[%s]: %w", postID, err)
+	}
+
+	return pscomms, nil
+}

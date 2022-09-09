@@ -11,6 +11,7 @@ import (
 
 	"github.com/dudakovict/social-network/business/core/comment/db"
 	"github.com/dudakovict/social-network/business/sys/database"
+	"github.com/dudakovict/social-network/business/sys/nats"
 	"github.com/dudakovict/social-network/business/sys/validate"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -26,13 +27,46 @@ var (
 // Core manages the set of API's for comment access.
 type Core struct {
 	store db.Store
+	n     *nats.NATS
 }
 
 // NewCore constructs a core for comment api access.
-func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB) Core {
-	return Core{
+func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB, n *nats.NATS) Core {
+	c := Core{
 		store: db.NewStore(log, sqlxDB),
+		n:     n,
 	}
+
+	/*
+		err := n.Subscribe("post-created", func(m *stan.Msg) {
+			buf := bytes.NewReader(m.Data)
+			dec := gob.NewDecoder(buf)
+
+			var dbP db.Post
+
+			err := dec.Decode(&dbP)
+			if err != nil {
+				fmt.Errorf("decoding: %w", err)
+			}
+
+			log.Infof("[%+v]:", dbP)
+
+			if err := c.store.CreatePost(context.Background(), dbP); err != nil {
+				fmt.Errorf("create: %w", err)
+			}
+		})
+	*/
+	l := Listener{
+		log:    log,
+		store:  c.store,
+		client: c.n.Client,
+	}
+
+	l.PostCreated()
+	l.PostUpdated()
+	l.PostDeleted()
+
+	return c
 }
 
 // Create inserts a new comment into the database.
@@ -168,4 +202,18 @@ func (c Core) QueryByPostID(ctx context.Context, postID string) ([]Comment, erro
 	}
 
 	return toCommentSlice(dbComments), nil
+}
+
+func (c Core) QueryPostsByPostID(ctx context.Context, postID string) (interface{}, error) {
+	if err := validate.CheckID(postID); err != nil {
+		return nil, ErrInvalidID
+	}
+
+	dbPosts, err := c.store.QueryPostsByPostID(ctx, postID)
+
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+
+	return toPostCommentSlice(dbPosts), nil
 }

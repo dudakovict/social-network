@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: posts-zipkin-pod
-  namespace: posts-zipkin-system
+  namespace: zipkin-system
 spec:
   replicas: 1
   strategy:

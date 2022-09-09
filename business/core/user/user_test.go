@@ -33,7 +33,7 @@ func TestUser(t *testing.T) {
 	log, db, teardown := dbtest.NewUnit(t, c, "testuser")
 	t.Cleanup(teardown)
 
-	core := user.NewCore(log, db)
+	core := user.NewCore(log, db, nil)
 
 	t.Log("Given the need to work with User records.")
 	{
@@ -123,7 +123,7 @@ func TestPagingUser(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	user := user.NewCore(log, db)
+	user := user.NewCore(log, db, nil)
 
 	t.Log("Given the need to page through User records.")
 	{

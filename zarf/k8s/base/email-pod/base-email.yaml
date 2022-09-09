@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: services-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-pod # Base POD name
+  namespace: services-system
+spec:
+  selector:
+    matchLabels:
+      app: email # Selector for POD name search.
+  template:
+    metadata:
+      labels:
+        app: email
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: email-api
+        image: email-api-image
+        ports:
+        - name: email-api
+          containerPort: 50084
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: email-service
+  namespace: services-system
+spec:
+  type: ClusterIP
+  selector:
+    app: email
+  ports:
+  - name: email-api
+    port: 50084
+    targetPort: email-api

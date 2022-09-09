@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comments-pod
-  namespace: comments-system
+  namespace: services-system
 spec:
   replicas: 1
   strategy:
