@@ -15,25 +15,34 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var c *docker.Container
+var esc *docker.Container
+var dbc *docker.Container
 
 func TestMain(m *testing.M) {
 	var err error
-	c, err = dbtest.StartDB()
+	esc, err = dbtest.StartGRPC()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer dbtest.StopDB(c)
+
+	dbc, err = dbtest.StartDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer dbtest.StopDB(esc)
+	defer dbtest.StopDB(dbc)
 
 	m.Run()
 }
 
 func TestUser(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testuser")
+	log, db, ec, teardown := dbtest.NewUnit(t, dbc, "testuser")
 	t.Cleanup(teardown)
 
-	core := user.NewCore(log, db, nil)
+	core := user.NewCore(log, db, ec)
 
 	t.Log("Given the need to work with User records.")
 	{
@@ -115,7 +124,7 @@ func TestUser(t *testing.T) {
 }
 
 func TestPagingUser(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testpaging")
+	log, db, ec, teardown := dbtest.NewUnit(t, dbc, "testpaging")
 	t.Cleanup(teardown)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -123,7 +132,7 @@ func TestPagingUser(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	user := user.NewCore(log, db, nil)
+	user := user.NewCore(log, db, ec)
 
 	t.Log("Given the need to page through User records.")
 	{

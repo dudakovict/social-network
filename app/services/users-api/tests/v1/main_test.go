@@ -8,16 +8,25 @@ import (
 	"github.com/dudakovict/social-network/foundation/docker"
 )
 
-var c *docker.Container
+var esc *docker.Container
+var dbc *docker.Container
 
 func TestMain(m *testing.M) {
 	var err error
-	c, err = dbtest.StartDB()
+	esc, err = dbtest.StartGRPC()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer dbtest.StopDB(c)
+
+	dbc, err = dbtest.StartDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer dbtest.StopGRPC(esc)
+	defer dbtest.StopDB(dbc)
 
 	m.Run()
 }

@@ -86,21 +86,8 @@ func (c Core) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 
 	_, err = c.ec.Send(ctx, &in)
 	if err != nil {
-		c.log.Info("==============", err, "==================")
-		c.log.Info("==============", err, "==================")
-		c.log.Info("==============", err, "==================")
-		c.log.Info("==============", err, "==================")
+		c.log.Info(err)
 	}
-
-	/*
-		go func() error {
-			_, err = c.ec.Send(ctx, &in)
-			if err != nil {
-				return fmt.Errorf("send: %w", err)
-			}
-			return nil
-		}()
-	*/
 
 	return toUser(dbUsr), nil
 }

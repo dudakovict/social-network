@@ -14,25 +14,34 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var c *docker.Container
+var nc *docker.Container
+var dbc *docker.Container
 
 func TestMain(m *testing.M) {
 	var err error
-	c, err = dbtest.StartDB()
+	nc, err := dbtest.StartNATS()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer dbtest.StopDB(c)
+
+	dbc, err = dbtest.StartDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer dbtest.StopNATS(nc)
+	defer dbtest.StopDB(dbc)
 
 	m.Run()
 }
 
 func TestPost(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testpost")
+	log, db, n, teardown := dbtest.NewUnit(t, nc, dbc, "testpost")
 	t.Cleanup(teardown)
 
-	core := post.NewCore(log, db, nil)
+	core := post.NewCore(log, db, n)
 
 	t.Log("Given the need to work with Post records.")
 	{
@@ -124,7 +133,7 @@ func TestPost(t *testing.T) {
 }
 
 func TestPagingPost(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testpaging")
+	log, db, n, teardown := dbtest.NewUnit(t, nc, dbc, "testpaging")
 	t.Cleanup(teardown)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -132,7 +141,7 @@ func TestPagingPost(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	post := post.NewCore(log, db, nil)
+	post := post.NewCore(log, db, n)
 
 	t.Log("Given the need to page through Post records.")
 	{

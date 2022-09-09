@@ -30,7 +30,7 @@ type UserTests struct {
 
 // TestUsers is the entry point for testing user management functions.
 func TestUsers(t *testing.T) {
-	test := dbtest.NewIntegration(t, c, "inttestusers")
+	test := dbtest.NewIntegration(t, dbc, "inttestusers")
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
@@ -40,6 +40,7 @@ func TestUsers(t *testing.T) {
 			Log:      test.Log,
 			Auth:     test.Auth,
 			DB:       test.DB,
+			EC:       test.EC,
 		}),
 		userToken:  test.Token("user@example.com", "gophers"),
 		adminToken: test.Token("admin@example.com", "gophers"),

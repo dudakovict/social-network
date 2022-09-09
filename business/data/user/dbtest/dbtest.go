@@ -12,6 +12,7 @@ import (
 	"time"
 
 	dbUser "github.com/dudakovict/social-network/business/core/user/db"
+	"github.com/dudakovict/social-network/business/data/email"
 	"github.com/dudakovict/social-network/business/data/user/dbschema"
 	"github.com/dudakovict/social-network/business/sys/auth"
 	"github.com/dudakovict/social-network/business/sys/database"
@@ -21,6 +22,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 )
 
 // Success and failure markers.
@@ -43,10 +45,24 @@ func StopDB(c *docker.Container) {
 	docker.StopContainer(c.ID)
 }
 
+// StartDB starts a database instance.
+func StartGRPC() (*docker.Container, error) {
+	image := "email-api-amd64:1.0"
+	port := "50084"
+	args := []string{"-p", "50084:50084"}
+
+	return docker.StartContainer(image, port, args...)
+}
+
+// StopDB stops a running database instance.
+func StopGRPC(c *docker.Container) {
+	docker.StopContainer(c.ID)
+}
+
 // NewUnit creates a test database inside a Docker container. It creates the
 // required table structure but the database is otherwise empty. It returns
 // the database to use as well as a function to call at the end of the test.
-func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogger, *sqlx.DB, func()) {
+func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogger, *sqlx.DB, email.EmailClient, func()) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -108,6 +124,20 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogg
 		zapcore.NewCore(encoder, zapcore.AddSync(writer), zapcore.DebugLevel)).
 		Sugar()
 
+	t.Log("Opening gRPC connection ...")
+
+	conn, err := grpc.Dial("0.0.0.0:50084", grpc.WithInsecure())
+
+	if err != nil {
+		t.Fatalf("Connecting to gRPC: %v", err)
+	}
+
+	t.Log("Create the email client ...")
+
+	ec := email.NewEmailClient(conn)
+
+	t.Log("Email client ready ...")
+
 	// teardown is the function that should be invoked when the caller is done
 	// with the database.
 	teardown := func() {
@@ -122,7 +152,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogg
 		fmt.Println("******************** LOGS ********************")
 	}
 
-	return log, db, teardown
+	return log, db, ec, teardown
 }
 
 // Test owns state for running and shutting down tests.
@@ -130,6 +160,7 @@ type Test struct {
 	DB       *sqlx.DB
 	Log      *zap.SugaredLogger
 	Auth     *auth.Auth
+	EC       email.EmailClient
 	Teardown func()
 
 	t *testing.T
@@ -137,7 +168,7 @@ type Test struct {
 
 // NewIntegration creates a database, seeds it, constructs an authenticator.
 func NewIntegration(t *testing.T, c *docker.Container, dbName string) *Test {
-	log, db, teardown := NewUnit(t, c, dbName)
+	log, db, ec, teardown := NewUnit(t, c, dbName)
 
 	// Create RSA keys to enable authentication in our service.
 	keyID := "4754d86b-7a6d-4df5-9c65-224741361492"
@@ -156,6 +187,7 @@ func NewIntegration(t *testing.T, c *docker.Container, dbName string) *Test {
 		DB:       db,
 		Log:      log,
 		Auth:     auth,
+		EC:       ec,
 		t:        t,
 		Teardown: teardown,
 	}

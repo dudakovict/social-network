@@ -14,25 +14,34 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var c *docker.Container
+var nc *docker.Container
+var dbc *docker.Container
 
 func TestMain(m *testing.M) {
 	var err error
-	c, err = dbtest.StartDB()
+	nc, err = dbtest.StartNATS()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer dbtest.StopDB(c)
+
+	dbc, err = dbtest.StartDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer dbtest.StopNATS(nc)
+	defer dbtest.StopDB(dbc)
 
 	m.Run()
 }
 
 func TestComment(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testcomment")
+	log, db, n, teardown := dbtest.NewUnit(t, nc, dbc, "testcomment")
 	t.Cleanup(teardown)
 
-	core := comment.NewCore(log, db, nil)
+	core := comment.NewCore(log, db, n)
 
 	t.Log("Given the need to work with Comment records.")
 	{
@@ -121,7 +130,7 @@ func TestComment(t *testing.T) {
 }
 
 func TestPagingComment(t *testing.T) {
-	log, db, teardown := dbtest.NewUnit(t, c, "testpaging")
+	log, db, n, teardown := dbtest.NewUnit(t, nc, dbc, "testpaging")
 	t.Cleanup(teardown)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -129,7 +138,7 @@ func TestPagingComment(t *testing.T) {
 
 	dbschema.Seed(ctx, db)
 
-	comment := comment.NewCore(log, db, nil)
+	comment := comment.NewCore(log, db, n)
 
 	t.Log("Given the need to page through Comment records.")
 	{

@@ -68,8 +68,8 @@ func run(log *zap.SugaredLogger) error {
 			Address string `conf:"default:0.0.0.0:50084"`
 		}
 		SMTP struct {
-			Username string `conf:"default:"`
-			Password string `conf:"default:"`
+			Username string `conf:"default:example@gmail.com,env:SMTP_USERNAME"`
+			Password string `conf:"default:jusesendsmtpauth,env:SMTP_PASSWORD"`
 			Host     string `conf:"default:smtp.gmail.com"`
 			Port     string `conf:"default:587"`
 			Address  string `conf:"default:smtp.gmail.com:587"`
@@ -81,7 +81,7 @@ func run(log *zap.SugaredLogger) error {
 		},
 	}
 
-	const prefix = "COMMENTS"
+	const prefix = "EMAIL"
 	help, err := conf.ParseOSArgs(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
@@ -117,6 +117,11 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	grpc := grpc.NewServer()
+
+	/*
+		cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
+		cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+	*/
 
 	auth := smtp.PlainAuth("", cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.Host)
 	es := es.NewEmailServer(log, cfg.SMTP.Address, cfg.SMTP.Username, auth)
