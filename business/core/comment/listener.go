@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 
 	"github.com/dudakovict/social-network/business/core/comment/db"
 	"github.com/nats-io/stan.go"
@@ -26,11 +25,11 @@ func (l Listener) PostCreated() error {
 
 		err := dec.Decode(&dbP)
 		if err != nil {
-			fmt.Errorf("decoding: %w", err)
+			l.log.Infof("decoding: %w", err)
 		}
 
 		if err := l.store.CreatePost(context.Background(), dbP); err != nil {
-			fmt.Errorf("create: %w", err)
+			l.log.Infof("create: %w", err)
 		}
 	})
 	return nil
@@ -46,11 +45,11 @@ func (l Listener) PostUpdated() error {
 		l.log.Infow("POST-UPDATED", "===========================================")
 		err := dec.Decode(&dbP)
 		if err != nil {
-			fmt.Errorf("decoding: %w", err)
+			l.log.Infof("decoding: %w", err)
 		}
 		l.log.Infow("postupdated", dbP)
 		if err := l.store.UpdatePost(context.Background(), dbP); err != nil {
-			fmt.Errorf("create: %w", err)
+			l.log.Infof("create: %w", err)
 		}
 	})
 	return nil
@@ -65,11 +64,11 @@ func (l Listener) PostDeleted() error {
 
 		err := dec.Decode(&postID)
 		if err != nil {
-			fmt.Errorf("decoding: %w", err)
+			l.log.Infof("decoding: %w", err)
 		}
 
 		if err := l.store.DeletePost(context.Background(), postID); err != nil {
-			fmt.Errorf("create: %w", err)
+			l.log.Infof("create: %w", err)
 		}
 	})
 	return nil
