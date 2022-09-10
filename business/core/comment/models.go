@@ -72,19 +72,6 @@ func toCommentSlice(dbCs []db.Comment) []Comment {
 	return comments
 }
 
-func toPost(dbP db.Post) Post {
-	pu := (*Post)(unsafe.Pointer(&dbP))
-	return *pu
-}
-
-func toPostSlice(dbPs []db.Post) []Post {
-	posts := make([]Post, len(dbPs))
-	for i, dbP := range dbPs {
-		posts[i] = toPost(dbP)
-	}
-	return posts
-}
-
 func toPostComment(dbPcomm db.PostComment) PostComment {
 	pcu := (*PostComment)(unsafe.Pointer(&dbPcomm))
 	return *pcu

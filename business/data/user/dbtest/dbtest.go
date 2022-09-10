@@ -45,7 +45,7 @@ func StopDB(c *docker.Container) {
 	docker.StopContainer(c.ID)
 }
 
-// StartDB starts a database instance.
+// StartGRPC starts a gRPC instance.
 func StartGRPC() (*docker.Container, error) {
 	image := "email-api-amd64:1.0"
 	port := "50084"
@@ -54,7 +54,7 @@ func StartGRPC() (*docker.Container, error) {
 	return docker.StartContainer(image, port, args...)
 }
 
-// StopDB stops a running database instance.
+// StopGRPC stops a running gRPC instance.
 func StopGRPC(c *docker.Container) {
 	docker.StopContainer(c.ID)
 }
@@ -206,10 +206,10 @@ func (test *Test) Token(email, pass string) string {
 	}
 
 	claims := auth.Claims{
-		StandardClaims: jwt.StandardClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "service project",
-			ExpiresAt: time.Now().Add(time.Hour).Unix(),
-			IssuedAt:  time.Now().UTC().Unix(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 			Subject:   dbUsr.ID,
 		},
 		Roles: dbUsr.Roles,
