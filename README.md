@@ -44,4 +44,4 @@ Spin up a local Kind environment: ```make kind-up```
 
 Load the Docker images into the Kind environment: ```make kind-load```
 
-Apply the configuration files to the Kind environment: ```make kind-apply`
+Apply the configuration files to the Kind environment: ```make kind-apply```
