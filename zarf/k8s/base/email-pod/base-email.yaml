@@ -26,6 +26,33 @@ spec:
         ports:
         - name: email-api
           containerPort: 50084
+        env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KUBERNETES_PODNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: KUBERNETES_NAMESPACE_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: KUBERNETES_NODENAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: EMAIL_SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: smtp-credentials
+              key: username
+        - name: EMAIL_SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: smtp-credentials
+              key: password
 ---
 apiVersion: v1
 kind: Service

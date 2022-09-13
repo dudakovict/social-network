@@ -98,8 +98,8 @@ func run(log *zap.SugaredLogger) error {
 		}
 		NATS struct {
 			ClusterID string `conf:"default:social-network"`
-			ClientID  string `conf:"env:NATS_CLIENT_ID"`
-			Host      string `conf:"default:http://nats-service:4222,env:NATS_URL"`
+			ClientID  string `conf:"default:comments-pod,env:NATS_CLIENT_ID"`
+			Host      string `conf:"default:http://nats-service:4222"`
 		}
 	}{
 		Version: conf.Version{
@@ -178,11 +178,9 @@ func run(log *zap.SugaredLogger) error {
 	// Create connectivity to the NATS server.
 	log.Infow("startup", "status", "initializing NATS support", "host", cfg.NATS.Host)
 
-	cfg.NATS.ClientID = os.Getenv("NATS_CLIENT_ID")
-
 	n, err := nats.Connect(nats.Config{
 		ClusterID: cfg.NATS.ClusterID,
-		ClientID:  "COMMENTS_CLIENT",
+		ClientID:  cfg.NATS.ClientID,
 		Host:      cfg.NATS.Host,
 	})
 

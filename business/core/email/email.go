@@ -1,6 +1,4 @@
-// Package email provides an example of a core business API. Right now these
-// calls are just wrapping the data/data layer. But at some point you will
-// want auditing or something that isn't specific to the data/store layer.
+// Package email provides support for sending e-mail messages
 package email
 
 import (
@@ -30,9 +28,7 @@ func NewEmailServer(log *zap.SugaredLogger, address string, sender string, auth 
 }
 
 func (es *EmailServer) Send(ctx context.Context, req *email.EmailRequest) (*email.EmailResponse, error) {
-
 	message := []byte("Subject: Social network\n" + "Welcome to my social network!")
-
 	err := smtp.SendMail(es.address, es.auth, es.sender, []string{req.Email}, message)
 	if err != nil {
 		return nil, fmt.Errorf("send: %w", err)

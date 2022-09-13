@@ -100,8 +100,8 @@ func run(log *zap.SugaredLogger) error {
 		}
 		NATS struct {
 			ClusterID string `conf:"default:social-network"`
-			ClientID  string `conf:"env:NATS_CLIENT_ID"`
-			Host      string `conf:"default:http://nats-service:4222,env:NATS_URL"`
+			ClientID  string `conf:"default:posts-pod,env:NATS_CLIENT_ID"`
+			Host      string `conf:"default:http://nats-service:4222"`
 		}
 	}{
 		Version: conf.Version{
@@ -182,7 +182,7 @@ func run(log *zap.SugaredLogger) error {
 
 	n, err := nats.Connect(nats.Config{
 		ClusterID: cfg.NATS.ClusterID,
-		ClientID:  "CLIENT_ID",
+		ClientID:  cfg.NATS.ClientID,
 		Host:      cfg.NATS.Host,
 	})
 

@@ -6,18 +6,19 @@ import (
 	"encoding/gob"
 
 	"github.com/dudakovict/social-network/business/core/comment/db"
+	"github.com/dudakovict/social-network/business/sys/nats"
 	"github.com/nats-io/stan.go"
 	"go.uber.org/zap"
 )
 
 type Listener struct {
-	log    *zap.SugaredLogger
-	store  db.Store
-	client stan.Conn
+	log   *zap.SugaredLogger
+	nats  *nats.NATS
+	store db.Store
 }
 
 func (l Listener) PostCreated() error {
-	l.client.Subscribe("post-created", func(m *stan.Msg) {
+	l.nats.Subscribe("post-created", "posts", func(m *stan.Msg) {
 		buf := bytes.NewReader(m.Data)
 		dec := gob.NewDecoder(buf)
 
@@ -32,17 +33,17 @@ func (l Listener) PostCreated() error {
 			l.log.Infof("create: %w", err)
 		}
 	})
+
 	return nil
 }
 
 func (l Listener) PostUpdated() error {
-	l.client.Subscribe("post-updated", func(m *stan.Msg) {
+	l.nats.Subscribe("post-updated", "posts", func(m *stan.Msg) {
 		buf := bytes.NewReader(m.Data)
 		dec := gob.NewDecoder(buf)
 
 		var dbP db.Post
 
-		l.log.Infow("POST-UPDATED", "===========================================")
 		err := dec.Decode(&dbP)
 		if err != nil {
 			l.log.Infof("decoding: %w", err)
@@ -52,11 +53,12 @@ func (l Listener) PostUpdated() error {
 			l.log.Infof("create: %w", err)
 		}
 	})
+
 	return nil
 }
 
 func (l Listener) PostDeleted() error {
-	l.client.Subscribe("post-deleted", func(m *stan.Msg) {
+	l.nats.Subscribe("post-deleted", "posts", func(m *stan.Msg) {
 		buf := bytes.NewReader(m.Data)
 		dec := gob.NewDecoder(buf)
 
@@ -71,5 +73,6 @@ func (l Listener) PostDeleted() error {
 			l.log.Infof("create: %w", err)
 		}
 	})
+
 	return nil
 }

@@ -29,14 +29,14 @@ var (
 // Core manages the set of API's for post access.
 type Core struct {
 	store db.Store
-	n     *nats.NATS
+	nats  *nats.NATS
 }
 
 // NewCore constructs a core for post api access.
-func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB, n *nats.NATS) Core {
+func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB, nats *nats.NATS) Core {
 	return Core{
 		store: db.NewStore(log, sqlxDB),
-		n:     n,
+		nats:  nats,
 	}
 }
 
@@ -55,7 +55,6 @@ func (c Core) Create(ctx context.Context, np NewPost, now time.Time) (Post, erro
 		DateUpdated: now,
 	}
 
-	// This provides an example of how to execute a transaction if required.
 	tran := func(tx sqlx.ExtContext) error {
 		if err := c.store.Tran(tx).Create(ctx, dbP); err != nil {
 			return fmt.Errorf("create: %w", err)
@@ -67,10 +66,6 @@ func (c Core) Create(ctx context.Context, np NewPost, now time.Time) (Post, erro
 		return Post{}, fmt.Errorf("tran: %w", err)
 	}
 
-	// if err := c.store.Create(ctx, dbP); err != nil {
-	// 	return Post{}, fmt.Errorf("create: %w", err)
-	// }
-
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 
@@ -78,17 +73,9 @@ func (c Core) Create(ctx context.Context, np NewPost, now time.Time) (Post, erro
 		return Post{}, fmt.Errorf("encoding: %w", err)
 	}
 
-	if err := c.n.Client.Publish("post-created", buf.Bytes()); err != nil {
+	if err := c.nats.Client.Publish("post-created", buf.Bytes()); err != nil {
 		return Post{}, fmt.Errorf("pub: %w", err)
 	}
-
-	/*
-		nuid, err := c.nats.PublishAsync("test", []byte("Hello World"), nil)
-
-		if err != nil {
-			fmt.Printf("Error publishing msg %s: %v\n", nuid, err.Error())
-		}
-	*/
 
 	return toPost(dbP), nil
 }
@@ -130,7 +117,7 @@ func (c Core) Update(ctx context.Context, postID string, up UpdatePost, now time
 		return fmt.Errorf("encoding: %w", err)
 	}
 
-	if err := c.n.Client.Publish("post-updated", buf.Bytes()); err != nil {
+	if err := c.nats.Client.Publish("post-updated", buf.Bytes()); err != nil {
 		return fmt.Errorf("pub: %w", err)
 	}
 

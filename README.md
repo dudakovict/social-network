@@ -1,6 +1,7 @@
-# **Social network**
-
-Master's thesis - Communication patterns in a microservice architecture
+# Communication patterns in a microservice architecture
+### Master's thesis
+Author: Timon Dudaković
+Mentor: doc. dr. sc. Nikola Tanković
 
 ## Requirements
 - [Golang](https://go.dev/)
@@ -23,11 +24,7 @@ MacOS: ```brew install kustomize```
 Windows: ```choco install kustomize```
 
 ## Configuration
-Go into app/services/email-api/main.go
-
-On line 71 paste your gmail address
-
-On line 72 paste your app password (not your actual gmail password).
+Run ```kubectl create secret generic smtp-credentials --from-literal=email --from_literal=email_app_password``` replacing **email** and **email_app_password** with valid data.
 
 To configure your app password go to your gmail account and head over to security.
 There you can create an Email app password that is located below your 2FA checkbox.

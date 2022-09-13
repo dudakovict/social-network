@@ -1,4 +1,4 @@
-// Package nats provides support for connecting to NATS streaming server.
+// Package nats provides support for connecting to NATS server.
 package nats
 
 import (
@@ -15,9 +15,8 @@ type Config struct {
 }
 
 type NATS struct {
-	QueueGroupName string
-	AckWait        time.Duration
-	Client         stan.Conn
+	AckWait time.Duration
+	Client  stan.Conn
 }
 
 func Connect(cfg Config) (*NATS, error) {
@@ -34,20 +33,19 @@ func Connect(cfg Config) (*NATS, error) {
 	aw, _ := time.ParseDuration("60s")
 
 	n := NATS{
-		QueueGroupName: "comments-service",
-		AckWait:        aw,
-		Client:         sc,
+		AckWait: aw,
+		Client:  sc,
 	}
 
 	return &n, nil
 }
 
-func (n NATS) Subscribe(subject string, cb stan.MsgHandler) error {
-	_, err := n.Client.QueueSubscribe(subject, n.QueueGroupName, cb,
+func (n NATS) Subscribe(subject string, queueGroupName string, cb stan.MsgHandler) error {
+	_, err := n.Client.QueueSubscribe(subject, queueGroupName, cb,
 		stan.DeliverAllAvailable(),
 		stan.SetManualAckMode(),
 		stan.AckWait(n.AckWait),
-		stan.DurableName(n.QueueGroupName),
+		stan.DurableName(queueGroupName),
 	)
 
 	if err != nil {
