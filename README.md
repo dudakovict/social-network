@@ -1,7 +1,15 @@
 # Communication patterns in a microservice architecture
 ### Master's thesis
 Author: Timon Dudaković
+
 Mentor: doc. dr. sc. Nikola Tanković
+
+### Abstract
+One of the biggest challenges when migrating from an application based on a monolothic arhictecture to an application based on a microservice architecture is adopting changes present in communication mechanisms. Converting from local method calls to cross-service synchronous and asynchronous calls adds a higher level of complexity and reduces efficiency in communication which violates peformance in distributed systems. The challenges of designing and implementing a distributed system are well known, but the process is still long lasting and complex. The solution presented in this thesis involves high levels of microservice isolation through the use of asynchronous communication patterns between the internal microservices. Although there is a number of microservices communicating over synchronous communication protocols, they don't violate the integrity of the communication, and they maintain a certain level of isolation.
+
+[Juraj Dobrila University of Pula](https://www.unipu.hr/)
+
+[Faculty of informatics](https://fipu.unipu.hr/fipu)
 
 ## Requirements
 - [Golang](https://go.dev/)
