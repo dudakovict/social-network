@@ -158,6 +158,11 @@ kind-zipkin-delete:
 	kustomize build zarf/k8s/kind/posts/zipkin-pod | kubectl delete -f -
 	kustomize build zarf/k8s/kind/comments/zipkin-pod | kubectl delete -f -
 
+kind-databases-delete:
+	kustomize build zarf/k8s/kind/users/database-pod | kubectl delete -f -
+	kustomize build zarf/k8s/kind/posts/database-pod | kubectl delete -f -
+	kustomize build zarf/k8s/kind/comments/database-pod | kubectl delete -f -
+
 kind-restart:
 	kubectl rollout restart deployment users-pod
 	kubectl rollout restart deployment posts-pod 
@@ -173,6 +178,15 @@ kind-logs:
 
 kind-logs-users:
 	kubectl logs -l app=users --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go -service=USERS-API
+
+kind-logs-posts:
+	kubectl logs -l app=posts --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go -service=POSTS-API
+
+kind-logs-comments:
+	kubectl logs -l app=comments --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go -service=COMMENTS-API
+
+kind-logs-email:
+	kubectl logs -l app=email --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go -service=EMAIL-API
 
 kind-logs-db:
 	kubectl logs -l app=database --namespace=database-system --all-containers=true -f --tail=100
@@ -212,8 +226,14 @@ kind-events:
 kind-events-warn:
 	kubectl get ev --field-selector type=Warning --sort-by metadata.creationTimestamp
 
-kind-context-users:
-	kubectl config set-context --current --namespace=users-system
+kind-context-services:
+	kubectl config set-context --current --namespace=services-system
+
+kind-context-databases:
+	kubectl config set-context --current --namespace=database-system
+
+kind-context-zipkin:
+	kubectl config set-context --current --namespace=zipkin-system
 
 kind-shell:
 	kubectl exec -it $(shell kubectl get pods | grep sales | cut -c1-26) --container users-api -- /bin/sh
